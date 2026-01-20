@@ -24,6 +24,9 @@
         --accent: 199 89% 48%;
         --accent-foreground: 0 0% 100%;
 
+        --scheduled: 217 91% 60%;
+        --scheduled-foreground: 0 0% 100%;
+
         --destructive: 0 84% 60%;
         --destructive-foreground: 0 0% 100%;
 
@@ -47,6 +50,10 @@
         --sidebar-accent-foreground: 220 14% 96%;
         --sidebar-border: 222 47% 18%;
         --sidebar-ring: 25 95% 53%;
+
+        --shadow-card: 0 4px 24px -4px hsl(217 91% 60% / 0.08);
+        --shadow-hover: 0 8px 32px -8px hsl(217 91% 60% / 0.15);
+        --shadow-selected: 0 0 0 3px hsl(217 91% 60% / 0.2);
 
         /* Gradients */
         --gradient-primary: linear-gradient(135deg, hsl(25 95% 53%), hsl(38 92% 50%));
@@ -158,5 +165,17 @@
     .glass {
         backdrop-filter: blur(12px);
         background: hsl(0 0% 100% / 0.8);
+    }
+
+    .card-shadow {
+        box-shadow: var(--shadow-card);
+    }
+
+    .card-shadow-hover {
+        box-shadow: var(--shadow-hover);
+    }
+
+    .card-shadow-selected {
+        box-shadow: var(--shadow-selected);
     }
 }
