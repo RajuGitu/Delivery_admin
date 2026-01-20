@@ -67,6 +67,25 @@ const createDeliveryBoy = async (req, res) => {
   }
 };
 
+/* =========================
+   GET ALL DELIVERY BOYS
+========================= */
+const getAllDeliveryBoys = async (req, res) => {
+  try {
+    const agents = await DeliveryBoy.find().sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: agents.length,
+      agents,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createDeliveryBoy,
+  getAllDeliveryBoys,
 };
+

@@ -9,6 +9,7 @@ const authRoutes = require("./routes/authRoutes");
 const recipientRoutes = require("./routes/recipientRoutes");
 const deliveryBoyRoutes = require("./routes/deliveryBoyRoutes");
 const orderRoutes = require("./routes/orderRoutes"); 
+const deliveryPlanRoutes = require("./routes/deliveryPlanRoutes");
 // ENV
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/recipients", recipientRoutes);
 app.use("/api/delivery-boys", deliveryBoyRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/delivery-plans", deliveryPlanRoutes);
 
 /* ===================== */
 /* DATABASE */

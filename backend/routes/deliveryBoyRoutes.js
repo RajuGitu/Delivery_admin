@@ -12,12 +12,14 @@
 const express = require("express");
 const {
   createDeliveryBoy,
+  getAllDeliveryBoys,
 } = require("../controllers/deliveryBoyController");
-// const { protect, adminOnly } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
+/* ROUTES */
 router.post("/create", createDeliveryBoy);
-
+router.get("/", getAllDeliveryBoys);
 
 module.exports = router;
+
