@@ -1,6 +1,6 @@
-const express = require("express");
-const { login } = require("../controllers/authController");
-const { protect, adminOnly, deliveryOnly } = require("../middleware/authMiddleware");
+import express from "express";
+import { login } from "../controllers/authController";
+const { protect, adminOnly, deliveryOnly } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
@@ -16,4 +16,4 @@ router.get("/delivery", protect, deliveryOnly, (req, res) => {
   res.json({ message: "Welcome Delivery Dashboard" });
 });
 
-module.exports = router;
+export default router;

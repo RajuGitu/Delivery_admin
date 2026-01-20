@@ -11,7 +11,7 @@ const orderSchema = new mongoose.Schema(
         createdBy: {
             type: mongoose.Schema.Types.ObjectId, // admin_sender
             ref: "User",
-            required: true,
+            required: false,
         },
 
         recipientId: {
@@ -37,7 +37,7 @@ const orderSchema = new mongoose.Schema(
 
         assignedArea: {
             type: String,
-            required: true,
+            required: false,
         },
 
         systemRecommendedSlots: [
