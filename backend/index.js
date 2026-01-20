@@ -8,6 +8,7 @@ const mongoose = require("mongoose");
 const authRoutes = require("./routes/authRoutes");
 const recipientRoutes = require("./routes/recipientRoutes");
 const deliveryBoyRoutes = require("./routes/deliveryBoyRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 
 // ENV
 dotenv.config();
@@ -37,6 +38,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/recipients", recipientRoutes);
 app.use("/api/delivery-boys", deliveryBoyRoutes);
+app.use("/api/orders", orderRoutes);
 
 /* ===================== */
 /* DATABASE */
