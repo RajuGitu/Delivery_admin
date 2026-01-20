@@ -70,8 +70,8 @@
 
 // controllers/orderController.js
 
-const Order = require("../models/Order");               // ✅ Order model
-const Recipient = require("../models/Recipient");       // ✅ Recipient model
+const Order = require("../models/orderSchema");               // ✅ Order model
+const Recipient = require("../models/recipientSchema");       // ✅ Recipient model
 const sendMail = require("../utils/mail");               // ✅ Mail utility
 
 /* =========================

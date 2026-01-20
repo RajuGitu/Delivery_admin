@@ -8,12 +8,12 @@ const mongoose = require("mongoose");
 const authRoutes = require("./routes/authRoutes");
 const recipientRoutes = require("./routes/recipientRoutes");
 const deliveryBoyRoutes = require("./routes/deliveryBoyRoutes");
-const orderRoutes = require("./routes/orderRoutes");
-
+const orderRoutes = require("./routes/orderRoutes"); 
 // ENV
 dotenv.config();
 
 const app = express();
+
 
 /* ===================== */
 /* MIDDLEWARE */
@@ -35,6 +35,7 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
+app.use("/api/orders", orderRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/recipients", recipientRoutes);
 app.use("/api/delivery-boys", deliveryBoyRoutes);
