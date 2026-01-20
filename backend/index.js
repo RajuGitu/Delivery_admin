@@ -1,26 +1,55 @@
-import express from "express";
-import dotenv from "dotenv";
-import cors from "cors";
-import mongoose from "mongoose";
 
-import deliveryBoyRoutes from "./routes/deliveryBoyRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
+const express = require("express");
+const dotenv = require("dotenv");
+const cors = require("cors");
+const mongoose = require("mongoose");
 
+// ROUTES
+const authRoutes = require("./routes/authRoutes");
+const recipientRoutes = require("./routes/recipientRoutes");
+const deliveryBoyRoutes = require("./routes/deliveryBoyRoutes");
+
+// ENV
 dotenv.config();
 
 const app = express();
 
-app.use(cors());
+/* ===================== */
+/* MIDDLEWARE */
+/* ===================== */
+app.use(
+  cors({
+    origin: "http://localhost:5173", // frontend
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 app.use(express.json());
 
-// Routes
+/* ===================== */
+/* ROUTES */
+/* ===================== */
+app.get("/", (req, res) => {
+  res.send("Server is running");
+});
+
+app.use("/api/auth", authRoutes);
+app.use("/api/recipients", recipientRoutes);
 app.use("/api/delivery-boys", deliveryBoyRoutes);
-app.use("/api/auth",authRoutes);
 
-// MongoDB connect
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch(err => console.log(err));
+/* ===================== */
+/* DATABASE */
+/* ===================== */
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+/* ===================== */
+/* SERVER */
+/* ===================== */
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
