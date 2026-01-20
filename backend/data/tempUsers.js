@@ -8,7 +8,7 @@ module.exports = {
   delivery: {
     id: "delivery-001",
     email: "delivery@delivery.com",
-    password: "Delivery@123", // TEMP password
+    password: "Delivery@123", // TEMP password  
     role: "delivery"
   }
 };
