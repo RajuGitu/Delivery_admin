@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { orders } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
 import { cn } from "@/lib/utils";
 import {
   Search,
@@ -30,26 +31,22 @@ import {
   Phone,
   CheckCircle,
 } from "lucide-react";
+
 import { toast } from "sonner";
 
 const statusStyles = {
   new: "bg-accent/10 text-accent border-accent/20",
+  awaiting_slot: "bg-warning/10 text-warning border-warning/20",
   slots_sent: "bg-warning/10 text-warning border-warning/20",
-  confirmed: "bg-success/10 text-success border-success/20",
-  out_for_delivery: "bg-primary/10 text-primary border-primary/20",
-  delivered: "bg-success/10 text-success border-success/20",
-  rescheduled: "bg-destructive/10 text-destructive border-destructive/20",
-  pending: "bg-muted text-muted-foreground border-muted",
+  slot_confirmed: "bg-success/10 text-success border-success/20",
+  pending_feasibility_check: "bg-muted text-muted-foreground border-muted",
 };
 
 const statusLabels = {
   new: "New",
+  awaiting_slot: "Awaiting Slot",
   slots_sent: "Slots Sent",
-  confirmed: "Confirmed",
-  out_for_delivery: "Out for Delivery",
-  delivered: "Delivered",
-  rescheduled: "Rescheduled",
-  pending: "Pending",
+  slot_confirmed: "Slot Confirmed",
 };
 
 export const OrdersTable = () => {
@@ -57,26 +54,81 @@ export const OrdersTable = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [filter, setFilter] = useState("all");
 
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // 🔥 FETCH ORDERS FROM BACKEND
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await axios.get(
+          "http://localhost:5001/api/orders/pending-slot-orders"
+        );
+
+        console.log("📦 Backend Orders:", res.data.orders);
+        setOrders(res.data.orders);
+      } catch (err) {
+        console.error("❌ Failed to load orders:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  // Filter only new + awaiting_slot
   const warehouseOrders = orders.filter(
-    (o) => o.status === "new" || o.status === "slots_sent"
+    (o) =>
+      o.status === "new" ||
+      o.status === "awaiting_slot" ||
+      o.status === "slots_sent"
   );
 
+
+  // Search + filter logic
   const filteredOrders = warehouseOrders.filter((order) => {
     const matchesSearch =
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.recipientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.assignedArea.toLowerCase().includes(searchQuery.toLowerCase());
+      order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.recipientId?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.assignedArea?.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (filter === "all") return matchesSearch;
     return matchesSearch && order.status === filter;
   });
 
-  const handleSendSlots = (order) => {
-    toast.success(`Slot options sent to ${order.recipientName}`, {
-      description: `Email sent to notify about delivery time options for ${order.productName}`,
-    });
+  // Email sending
+  const handleSendSlots = async (order) => {
+    try {
+      const response = await axios.post(
+        `http://localhost:5001/api/orders/send-slot-email/${order._id}`
+      );
+
+      toast.success("Slot email sent!", {
+        description: `Email sent to ${order.recipientId?.email}`,
+      });
+
+      // Optional: Refresh orders after sending email
+      setOrders(prev =>
+        prev.map(o =>
+          o._id === order._id ? { ...o, status: "slots_sent" } : o
+        )
+      );
+
+    } catch (error) {
+      console.error("❌ Failed to send slot email:", error);
+      toast.error("Failed to send email.");
+    }
   };
+
+  if (loading) {
+    return (
+      <p className="text-center py-6 text-muted-foreground">
+        Loading orders...
+      </p>
+    );
+  }
 
   return (
     <motion.div
@@ -98,13 +150,12 @@ export const OrdersTable = () => {
           </div>
 
           <div className="flex gap-2">
-            {["all", "new", "slots_sent"].map((status) => (
+            {["all", "new", "awaiting_slot"].map((status) => (
               <Button
                 key={status}
                 variant={filter === status ? "default" : "outline"}
                 size="sm"
                 onClick={() => setFilter(status)}
-                className={cn(filter === status && "gradient-primary border-0")}
               >
                 {status === "all" ? "All" : statusLabels[status]}
               </Button>
@@ -118,7 +169,7 @@ export const OrdersTable = () => {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead>Order ID</TableHead>
+              <TableHead>Order Number</TableHead>
               <TableHead>Product</TableHead>
               <TableHead>Recipient</TableHead>
               <TableHead>Area / Pincode</TableHead>
@@ -132,7 +183,7 @@ export const OrdersTable = () => {
             <AnimatePresence>
               {filteredOrders.map((order, index) => (
                 <motion.tr
-                  key={order.id}
+                  key={order._id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
@@ -141,7 +192,7 @@ export const OrdersTable = () => {
                   onClick={() => setSelectedOrder(order)}
                 >
                   <TableCell className="font-mono font-medium text-primary">
-                    {order.id}
+                    {order.orderNumber}
                   </TableCell>
 
                   <TableCell>
@@ -149,21 +200,19 @@ export const OrdersTable = () => {
                       <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
                         <Package className="w-5 h-5 text-primary-foreground" />
                       </div>
-                      <span className="font-medium">
-                        {order.productName}
-                      </span>
+                      <span className="font-medium">{order.product.name}</span>
                     </div>
                   </TableCell>
 
                   <TableCell>
-                    <p className="font-medium">{order.recipientName}</p>
+                    <p className="font-medium">{order.recipientId?.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {order.recipientPhone}
+                      {order.recipientId?.phone}
                     </p>
                   </TableCell>
 
                   <TableCell>
-                    <p className="font-medium">{order.assignedArea}</p>
+                    {/* <p className="font-medium">{order.assignedArea}</p> */}
                     <p className="text-sm text-muted-foreground">
                       {order.pincode}
                     </p>
@@ -171,17 +220,12 @@ export const OrdersTable = () => {
 
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {order.recommendedSlots.slice(0, 2).map((slot, i) => (
+                      {order.systemRecommendedSlots.slice(0, 2).map((slot, i) => (
                         <Badge key={i} variant="outline" className="text-xs">
                           <Clock className="w-3 h-3 mr-1" />
-                          {slot}
+                          {slot.startTime} – {slot.endTime}
                         </Badge>
                       ))}
-                      {order.recommendedSlots.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{order.recommendedSlots.length - 2}
-                        </Badge>
-                      )}
                     </div>
                   </TableCell>
 
@@ -193,7 +237,7 @@ export const OrdersTable = () => {
 
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
+                      {/* <Button
                         size="sm"
                         variant="outline"
                         onClick={(e) => {
@@ -202,7 +246,7 @@ export const OrdersTable = () => {
                         }}
                       >
                         <Eye className="w-4 h-4" />
-                      </Button>
+                      </Button> */}
 
                       {order.status === "new" && (
                         <Button
@@ -225,120 +269,6 @@ export const OrdersTable = () => {
           </TableBody>
         </Table>
       </div>
-
-      {/* Order Details Dialog */}
-      <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                <Package className="w-5 h-5 text-primary-foreground" />
-              </div>
-              Order Details - {selectedOrder?.id}
-            </DialogTitle>
-            <DialogDescription>
-              Complete information about this delivery order
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedOrder && (
-            <div className="grid gap-6 py-4">
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Product Info */}
-                <div className="space-y-4">
-                  <h4 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wider">
-                    Product Information
-                  </h4>
-                  <div className="p-4 rounded-xl bg-muted/50 space-y-2">
-                    <p className="font-semibold text-lg">
-                      {selectedOrder.productName}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Order ID: {selectedOrder.id}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Recipient Info */}
-                <div className="space-y-4">
-                  <h4 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wider">
-                    Recipient Information
-                  </h4>
-                  <div className="p-4 rounded-xl bg-muted/50 space-y-3">
-                    <p className="font-semibold">
-                      {selectedOrder.recipientName}
-                    </p>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="w-4 h-4" />
-                      {selectedOrder.recipientPhone}
-                    </div>
-                    <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <MapPin className="w-4 h-4 mt-0.5" />
-                      <span>
-                        {selectedOrder.deliveryAddress}
-                        <br />
-                        {selectedOrder.assignedArea} -{" "}
-                        {selectedOrder.pincode}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Recommended Slots */}
-              <div className="space-y-4">
-                <h4 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wider">
-                  AI Recommended Delivery Slots
-                </h4>
-                <div className="grid grid-cols-3 gap-3">
-                  {selectedOrder.recommendedSlots.map((slot, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="p-4 rounded-xl border border-border bg-card hover:border-primary hover:bg-primary/5 transition-all cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-primary" />
-                        <span className="font-medium">{slot}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {i === 0
-                          ? "Best match"
-                          : i === 1
-                          ? "Good option"
-                          : "Available"}
-                      </p>
-                      <CheckCircle className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity mt-2" />
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                <Button variant="outline" onClick={() => setSelectedOrder(null)}>
-                  Close
-                </Button>
-
-                {selectedOrder.status === "new" && (
-                  <Button
-                    className="gradient-primary"
-                    onClick={() => {
-                      handleSendSlots(selectedOrder);
-                      setSelectedOrder(null);
-                    }}
-                  >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Send Slot Options to Recipient
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </motion.div>
   );
 };

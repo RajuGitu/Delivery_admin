@@ -115,7 +115,7 @@ const orderSchema = new mongoose.Schema(
 
     recipientId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Recipient",
       required: true,
     },
 
@@ -157,7 +157,7 @@ const orderSchema = new mongoose.Schema(
 
     deliveryAgentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "DeliveryBoy",
       default: null,
     },
 

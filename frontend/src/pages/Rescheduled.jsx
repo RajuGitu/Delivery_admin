@@ -1,8 +1,47 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { RescheduledTable } from "@/components/orders/RescheduledTable";
 import { RefreshCw, AlertTriangle, Bell, Clock } from "lucide-react";
+import axios from "axios";
 
 const Rescheduled = () => {
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    
+    const handleReschedule = async (order) => {
+        try {
+            await axios.post(
+                `http://localhost:5001/api/orders/send-reschedule-email/${order._id}`
+            );
+
+            toast.success(`Reschedule email sent to ${order.recipientId?.name}`, {
+                description: "Recipient has been notified to choose a new slot",
+            });
+
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to send reschedule email");
+        }
+    };
+
+    useEffect(() => {
+        const loadOrders = async () => {
+            try {
+                const res = await axios.get(
+                    "http://localhost:5001/api/orders/allreshedule"
+                );
+                console.log("📦 Rescheduled Orders:", res.data.orders);
+                setOrders(res.data.orders);
+            } catch (err) {
+                console.error("❌ Failed to load rescheduled orders", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadOrders();
+    }, []);
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -35,33 +74,54 @@ const Rescheduled = () => {
                     <div className="flex items-center gap-3">
                         <AlertTriangle className="w-8 h-8 text-warning" />
                         <div>
-                            <p className="text-2xl font-display font-bold">Needs Action</p>
-                            <p className="text-sm text-muted-foreground">Orders requiring attention</p>
+                            <p className="text-2xl font-display font-bold">
+                                {orders.length}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                Needs Action
+                            </p>
                         </div>
                     </div>
                 </div>
+
                 <div className="p-5 rounded-xl bg-card border border-border">
                     <div className="flex items-center gap-3">
                         <Bell className="w-8 h-8 text-primary" />
                         <div>
-                            <p className="text-xl font-display font-bold">Auto Notifications</p>
-                            <p className="text-sm text-muted-foreground">Smart reschedule alerts</p>
+                            <p className="text-xl font-display font-bold">
+                                Auto Notifications
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                Smart reschedule alerts
+                            </p>
                         </div>
                     </div>
                 </div>
+
                 <div className="p-5 rounded-xl bg-card border border-border">
                     <div className="flex items-center gap-3">
                         <Clock className="w-8 h-8 text-accent" />
                         <div>
-                            <p className="text-xl font-display font-bold">New Slots Ready</p>
-                            <p className="text-sm text-muted-foreground">AI-suggested alternatives</p>
+                            <p className="text-xl font-display font-bold">
+                                New Slots Ready
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                AI-suggested alternatives
+                            </p>
                         </div>
                     </div>
                 </div>
             </motion.div>
 
+            {/* Loading */}
+            {loading && (
+                <p className="text-center text-muted-foreground">
+                    Loading rescheduled orders...
+                </p>
+            )}
+
             {/* Rescheduled Table */}
-            <RescheduledTable />
+            {!loading && <RescheduledTable orders={orders} />}
         </div>
     );
 };

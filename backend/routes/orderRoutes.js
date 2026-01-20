@@ -23,11 +23,31 @@ const {
   sendSlotSelectionEmail,
 } = require("../controllers/orderController");
 
+const {
+  getNewAndAwaitingSlotOrders
+} = require("../controllers/orderController");
+
+const {
+  getRescheduledOrders,
+} = require("../controllers/orderController");
+
+const { sendRescheduleEmail } = require("../controllers/orderController");
+
+const { getDeliveryStageOrders } = require("../controllers/orderController");
+// ✅ Generic status-based route
+
 const router = express.Router();
 
+// 🔁 RESCHEDULE ORDER
+
+router.get("/delivery-stages", getDeliveryStageOrders);
+router.post("/send-reschedule-email/:orderId", sendRescheduleEmail);
+
+router.get("/allreshedule", getRescheduledOrders);
 /* =========================
-   ORDER ROUTES
+ORDER ROUTES
 ========================= */
+router.get("/pending-slot-orders", getNewAndAwaitingSlotOrders);
 
 // Create a new order
 router.post("/", createOrder);

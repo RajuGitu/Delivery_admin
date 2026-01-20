@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { orders } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import axios from "axios";
 import {
   Table,
   TableBody,
@@ -29,24 +29,39 @@ const reasonStyles = {
   Overload: "bg-accent/10 text-accent border-accent/20",
 };
 
-export const RescheduledTable = () => {
+export const RescheduledTable = ({ orders }) => {
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Filter only rescheduled orders coming from backend
   const rescheduledOrders = orders.filter(
-    (o) => o.status === "rescheduled" || o.status === "pending"
+    (o) => o.status === "rescheduled"
   );
 
-  const filteredOrders = rescheduledOrders.filter(
-    (order) =>
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.recipientName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Search filter
+  const filteredOrders = rescheduledOrders.filter((order) => {
+    return (
+      order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.recipientId?.name
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase())
+    );
+  });
 
-  const handleReschedule = (order) => {
-    toast.success(`Reschedule request sent to ${order.recipientName}`, {
-      description: "New slot options have been sent to the recipient",
-    });
+  const handleReschedule = async (order) => {
+    try {
+      await axios.post(
+        `http://localhost:5001/api/orders/send-reschedule-email/${order._id}`
+      );
+
+      toast.success(`Reschedule email sent to ${order.recipientId?.name}`, {
+        description: "Recipient has been notified to choose a new slot",
+      });
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to send reschedule email");
+    }
   };
 
   return (
@@ -61,7 +76,7 @@ export const RescheduledTable = () => {
           <div>
             <h2 className="font-display font-bold text-xl flex items-center gap-2">
               <RefreshCw className="w-5 h-5 text-warning" />
-              Rescheduled & Pending Orders
+              Rescheduled Orders
             </h2>
             <p className="text-muted-foreground text-sm">
               Orders that need attention or rescheduling
@@ -84,8 +99,8 @@ export const RescheduledTable = () => {
       <div className="p-4 bg-warning/10 border-b border-warning/20 flex items-center gap-3">
         <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0" />
         <p className="text-sm text-warning">
-          <strong>{rescheduledOrders.length} orders</strong> require immediate
-          attention for rescheduling
+          <strong>{rescheduledOrders.length} orders</strong> require
+          immediate attention
         </p>
       </div>
 
@@ -94,12 +109,12 @@ export const RescheduledTable = () => {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead>Order ID</TableHead>
+              <TableHead>Order Number</TableHead>
               <TableHead>Product</TableHead>
               <TableHead>Recipient</TableHead>
               <TableHead>Previous Slot</TableHead>
               <TableHead>Reason</TableHead>
-              <TableHead>New Suggested Slots</TableHead>
+              <TableHead>AI Suggested Slots</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -109,7 +124,7 @@ export const RescheduledTable = () => {
             <AnimatePresence>
               {filteredOrders.map((order, index) => (
                 <motion.tr
-                  key={order.id}
+                  key={order._id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
@@ -117,7 +132,7 @@ export const RescheduledTable = () => {
                   className="group hover:bg-muted/50 transition-colors"
                 >
                   <TableCell className="font-mono font-medium text-primary">
-                    {order.id}
+                    {order.orderNumber}
                   </TableCell>
 
                   <TableCell>
@@ -125,70 +140,69 @@ export const RescheduledTable = () => {
                       <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
                         <Package className="w-5 h-5 text-primary-foreground" />
                       </div>
-                      <span className="font-medium">
-                        {order.productName}
-                      </span>
+                      {order.product.name}
                     </div>
                   </TableCell>
 
                   <TableCell>
-                    <p className="font-medium">{order.recipientName}</p>
+                    <p className="font-medium">{order.recipientId?.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {order.recipientPhone}
+                      {order.recipientId?.phone}
                     </p>
                   </TableCell>
 
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className="line-through opacity-50"
-                    >
-                      <Clock className="w-3 h-3 mr-1" />
-                      {order.selectedSlot || order.recommendedSlots[0]}
-                    </Badge>
+                    {order.selectedSlot?.startTime ? (
+                      <Badge
+                        variant="outline"
+                        className="line-through opacity-50"
+                      >
+                        <Clock className="w-3 h-3 mr-1" />
+                        {order.selectedSlot.startTime}–{order.selectedSlot.endTime}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">
+                        No previous slot
+                      </span>
+                    )}
                   </TableCell>
 
                   <TableCell>
-                    {order.reason && (
+                    {order.reason ? (
                       <Badge
                         className={cn(
                           "border",
-                          reasonStyles[order.reason] ||
-                            "bg-muted text-muted-foreground"
+                          reasonStyles[order.reason] ??
+                          "bg-muted text-muted-foreground"
                         )}
                       >
                         {order.reason}
                       </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">
+                        —
+                      </span>
                     )}
                   </TableCell>
 
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {order.recommendedSlots.slice(0, 2).map((slot, i) => (
+                      {order.systemRecommendedSlots?.map((slot, i) => (
                         <Badge
                           key={i}
                           variant="outline"
                           className="text-xs bg-success/5"
                         >
                           <Clock className="w-3 h-3 mr-1" />
-                          {slot}
+                          {slot.startTime}–{slot.endTime}
                         </Badge>
                       ))}
                     </div>
                   </TableCell>
 
                   <TableCell>
-                    <Badge
-                      className={cn(
-                        "border",
-                        order.status === "rescheduled"
-                          ? "bg-warning/10 text-warning border-warning/20"
-                          : "bg-muted text-muted-foreground border-muted"
-                      )}
-                    >
-                      {order.status === "rescheduled"
-                        ? "Rescheduled"
-                        : "Pending"}
+                    <Badge className="bg-warning/10 text-warning border-warning/20">
+                      Rescheduled
                     </Badge>
                   </TableCell>
 
@@ -212,9 +226,7 @@ export const RescheduledTable = () => {
       {filteredOrders.length === 0 && (
         <div className="p-12 text-center">
           <RefreshCw className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">
-            No rescheduled orders found
-          </p>
+          <p className="text-muted-foreground">No rescheduled orders found</p>
         </div>
       )}
     </motion.div>
