@@ -36,18 +36,18 @@ const App = () => (
       <Sonner />
 
       <BrowserRouter>
-  <Routes>
+        <Routes>
 
     {/* ---------------- */}
     {/* PUBLIC ROUTES */}
     {/* ---------------- */}
-    {/* <Route path="/login" element={<Login />} />
-    <Route path="/track" element={<Index />} /> PUBLIC */}
+    <Route path="/login" element={<Login />} />
+    <Route path="/track" element={<Index />} /> PUBLIC
 
     {/* ---------------- */}
     {/* ADMIN ROUTES */}
     {/* ---------------- */}
-    {/* <Route
+    <Route
       element={
         <ProtectedRoute allowedRole="admin">
           <MainLayout />
@@ -61,26 +61,26 @@ const App = () => (
       <Route path="/rescheduled" element={<Rescheduled />} />
       <Route path="/analytics" element={<Analytics />} />
       <Route path="/settings" element={<Settings />} />
-    </Route> */}
+    </Route>
 
     {/* ----------------------- */}
     {/* DELIVERY AGENT ROUTES */}
     {/* ----------------------- */}
-    {/* <Route
+    <Route
       path="/delivery_agent"
       element={
         <ProtectedRoute allowedRole="delivery">
           <DeliveryAgentDashboard />
         </ProtectedRoute>
       }
-    /> */}
+    />
 
     {/* ---------------- */}
     {/* NOT FOUND */}
     {/* ---------------- */}
-    {/* <Route path="*" element={<NotFound />} /> */}
+    <Route path="*" element={<NotFound />} />
 
-    <Route path="/" element={<DeliveryBoy />} />
+    <Route path="/delivery_partner" element={<DeliveryBoy />} />
   </Routes>
 </BrowserRouter>
     </TooltipProvider>

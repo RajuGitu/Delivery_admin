@@ -22,7 +22,7 @@ const navItems = [
   { title: "Delivery Plan", path: "/delivery-plan", icon: Truck },
   { title: "Rescheduled", path: "/rescheduled", icon: RefreshCw },
   { title: "Analytics", path: "/analytics", icon: BarChart3 },
-  { title: "Settings", path: "/settings", icon: Settings },
+  // { title: "Settings", path: "/settings", icon: Settings },
 ];
 
 export const AppSidebar = () => {

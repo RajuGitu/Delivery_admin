@@ -1,31 +1,77 @@
-import { Clock, CheckCircle2, Truck, AlertTriangle } from "lucide-react";
+import {
+  Clock,
+  CheckCircle2,
+  Truck,
+  AlertTriangle,
+  Package,
+  RefreshCw,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const statusConfig = {
-  pending: {
-    label: "Pending Confirmation",
+  new: {
+    label: "New",
+    icon: Clock,
+    className: "bg-muted text-muted-foreground border-muted",
+  },
+
+  awaiting_slot: {
+    label: "Awaiting Slot",
     icon: Clock,
     className: "bg-warning/10 text-warning border-warning/20",
   },
-  scheduled: {
-    label: "Scheduled",
-    icon: CheckCircle2,
-    className: "bg-scheduled/10 text-scheduled border-scheduled/20",
+
+  slots_sent: {
+    label: "Slots Sent",
+    icon: Clock,
+    className: "bg-blue-100 text-blue-700 border-blue-200",
   },
-  "out-for-delivery": {
+
+  slot_confirmed: {
+    label: "Slot Confirmed",
+    icon: CheckCircle2,
+    className: "bg-success/10 text-success border-success/20",
+  },
+
+  pending_feasibility_check: {
+    label: "Feasibility Check",
+    icon: AlertTriangle,
+    className: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  },
+
+  planned_for_delivery: {
+    label: "Planned",
+    icon: Package,
+    className: "bg-purple-100 text-purple-700 border-purple-200",
+  },
+
+  out_for_delivery: {
     label: "Out for Delivery",
     icon: Truck,
     className: "bg-success/10 text-success border-success/20",
   },
-  delayed: {
-    label: "Delayed",
-    icon: AlertTriangle,
-    className: "bg-delay/10 text-delay border-delay/20",
+
+  rescheduled: {
+    label: "Rescheduled",
+    icon: RefreshCw,
+    className: "bg-orange-100 text-orange-700 border-orange-200",
+  },
+
+  delivered: {
+    label: "Delivered",
+    icon: CheckCircle2,
+    className: "bg-green-100 text-green-700 border-green-200",
   },
 };
 
 export function StatusBadge({ status }) {
-  const config = statusConfig[status];
+  const config =
+    statusConfig[status] || {
+      label: "Unknown",
+      icon: AlertTriangle,
+      className: "bg-gray-200 text-gray-700 border-gray-300",
+    };
+
   const Icon = config.icon;
 
   return (

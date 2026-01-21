@@ -416,6 +416,139 @@ const getDeliveryStageOrders = async (req, res) => {
     });
   }
 };
+
+const sendReminderEmail = async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+
+    const order = await Order.findById(orderId).populate("recipientId");
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const recipientEmail = order.recipientId.email;
+    const recipientName = order.recipientId.name;
+
+    const subject = `Reminder: Your Delivery is Scheduled`;
+
+    const html = `
+      <h3>Hello ${recipientName},</h3>
+      <p>This is a friendly reminder for your upcoming parcel delivery.</p>
+
+      <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+      <p><strong>Delivery Date:</strong> ${order.selectedSlot.date}</p>
+      <p><strong>Time Slot:</strong> ${order.selectedSlot.startTime} - ${order.selectedSlot.endTime}</p>
+
+      <p>If you have any issues, you can reschedule from your dashboard.</p>
+
+      <br/>
+      <p>Thank you,</p>
+      <p><strong>Delivery Team</strong></p>
+    `;
+
+    await sendMail(recipientEmail, subject, html);
+
+    res.json({ message: "Reminder email sent successfully" });
+
+  } catch (error) {
+    console.error("Reminder email error:", error);
+    res.status(500).json({ message: "Error sending reminder email", error });
+  }
+};
+
+const getOrderForTracking = async (req, res) => {
+  try {
+    console.log("📦 Fetching order:", req.params.orderId);
+
+    const order = await Order.findById(req.params.orderId)
+      .populate("recipientId", "name email phone");
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    return res.json({ order });
+
+  } catch (error) {
+    console.error("❌ Error fetching order:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const confirmSlot = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { slot } = req.body;
+
+    console.log("🟢 Slot Confirmation Attempt:", slot);
+
+    if (!slot) {
+      return res.status(400).json({ message: "Slot details missing" });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    order.selectedSlot = slot;
+    order.status = "slot_confirmed";
+
+    order.timeline.push({
+      status: "slot_confirmed",
+      timestamp: new Date()
+    });
+
+    await order.save();
+
+    return res.json({
+      message: "Slot confirmed successfully",
+      order
+    });
+
+  } catch (error) {
+    console.error("❌ Error confirming slot:", error);
+    res.status(500).json({ message: "Error confirming slot", error });
+  }
+};
+
+const rescheduleSlot = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { slot } = req.body;
+
+    console.log("🔄 Reschedule requested:", slot);
+
+    if (!slot) {
+      return res.status(400).json({ message: "Slot details missing" });
+    }
+
+    const order = await Order.findById(orderId).populate("recipientId");
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    order.selectedSlot = slot;
+    order.status = "rescheduled";
+
+    order.timeline.push({
+      status: "rescheduled",
+      timestamp: new Date()
+    });
+
+    await order.save();
+
+    return res.json({
+      message: "Order rescheduled successfully",
+      order
+    });
+
+  } catch (error) {
+    console.error("❌ Error rescheduling slot:", error);
+    res.status(500).json({ message: "Error rescheduling slot", error });
+  }
+};
 module.exports = {
   createOrder,
   getAllOrders,
@@ -425,4 +558,8 @@ module.exports = {
   getRescheduledOrders,
   sendRescheduleEmail,
   getDeliveryStageOrders,
+  sendReminderEmail,
+  getOrderForTracking,
+  confirmSlot,
+  rescheduleSlot,
 };

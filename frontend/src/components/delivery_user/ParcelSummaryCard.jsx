@@ -14,13 +14,13 @@ export function ParcelSummaryCard({ parcel }) {
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Package className="w-4 h-4" />
-            <span className="text-sm">{parcel.itemCategory}</span>
+            <span className="text-sm">{parcel.product.name}</span>
           </div>
 
           <div className="flex items-center gap-2 text-muted-foreground">
             <User className="w-4 h-4" />
             <span className="text-sm">
-              From:{" "}
+              From:{"Amazon"}
               <span className="text-foreground font-medium">
                 {parcel.senderName}
               </span>

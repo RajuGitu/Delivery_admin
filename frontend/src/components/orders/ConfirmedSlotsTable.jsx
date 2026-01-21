@@ -21,6 +21,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import axios from "axios";
 
 export const ConfirmedSlotsTable = ({ orders = [] }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,11 +39,22 @@ export const ConfirmedSlotsTable = ({ orders = [] }) => {
       .includes(searchQuery.toLowerCase())
   );
 
-  const handleSendReminder = (order) => {
-    toast.success(`Reminder sent to ${order.recipientId?.name}`, {
-      description: `Delivery reminder for ${order.selectedSlot?.date}`,
-    });
+  const handleSendReminder = async (order) => {
+    try {
+      await axios.post(
+        `http://localhost:5001/api/orders/send-reminder/${order._id}`
+      );
+
+      toast.success(`Reminder sent to ${order.recipientId?.name}`, {
+        description: `Delivery reminder email has been sent.`,
+      });
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to send reminder email");
+    }
   };
+
 
   return (
     <motion.div

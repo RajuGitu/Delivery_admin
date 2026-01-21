@@ -34,11 +34,28 @@ const {
 const { sendRescheduleEmail } = require("../controllers/orderController");
 
 const { getDeliveryStageOrders } = require("../controllers/orderController");
+const { sendReminderEmail } = require("../controllers/orderController");
+const {
+  getOrderForTracking,
+  confirmSlot,
+  rescheduleSlot
+} = require("../controllers/orderController");
+
 // ✅ Generic status-based route
 
 const router = express.Router();
 
+// Public route - customer tracking page
+router.get("/track/:orderId", getOrderForTracking);
+
+// Customer selects slot
+router.post("/confirm-slot/:orderId", confirmSlot);
+
+// Customer reschedules slot
+router.post("/reschedule/:orderId", rescheduleSlot);
+
 // 🔁 RESCHEDULE ORDER
+router.post("/send-reminder/:orderId", sendReminderEmail);
 
 router.get("/delivery-stages", getDeliveryStageOrders);
 router.post("/send-reschedule-email/:orderId", sendRescheduleEmail);

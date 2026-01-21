@@ -16,7 +16,7 @@ export function DateSlotSelector({
   // Generate next 7 days
   const next7Days = useMemo(() => {
     const today = new Date();
-    return Array.from({ length: 7 }, (_, i) => addDays(today, i + 1));
+    return Array.from({ length: 7 }, (_, i) => addDays(today, i));
   }, []);
 
   // Check which dates have available slots
@@ -25,10 +25,12 @@ export function DateSlotSelector({
     next7Days.forEach((date) => {
       const dateStr = format(date, "yyyy-MM-dd");
       const dateSlots = slots.filter((s) => s.date === dateStr);
-      const availableSlots = dateSlots.filter((s) => s.isAvailable);
+      const availableSlots = dateSlots; // all are available for now
       availability[dateStr] = {
         hasSlots: availableSlots.length > 0,
-        hasAiRecommended: availableSlots.some((s) => s.isAiRecommended),
+        hasAiRecommended: availableSlots.some(
+          (s) => s.tag === "AI Recommended" || s.confidenceScore > 85
+        ),
       };
     });
     return availability;
@@ -42,8 +44,11 @@ export function DateSlotSelector({
   }, [slots, selectedDate]);
 
   const aiSlotsForDate = slotsForSelectedDate.filter(
-    (s) => s.isAiRecommended && s.isAvailable
+    (s) =>
+      (s.tag === "AI Recommended" || s.confidenceScore > 85) &&
+      s.isAvailable
   );
+
   const otherSlotsForDate = slotsForSelectedDate.filter(
     (s) => !s.isAiRecommended
   );
@@ -88,8 +93,8 @@ export function DateSlotSelector({
                   isSelected
                     ? "border-primary bg-primary/10"
                     : hasSlots
-                    ? "border-border bg-card hover:border-primary/50"
-                    : "border-border bg-muted/30 opacity-50 cursor-not-allowed"
+                      ? "border-border bg-card hover:border-primary/50"
+                      : "border-border bg-muted/30 opacity-50 cursor-not-allowed"
                 )}
               >
                 {hasAiRecommended && !isSelected && (
@@ -134,7 +139,7 @@ export function DateSlotSelector({
             </h4>
 
             {slotsForSelectedDate.filter((s) => s.isAvailable).length ===
-            0 ? (
+              0 ? (
               <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-xl border border-border">
                 <AlertCircle className="w-5 h-5 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
