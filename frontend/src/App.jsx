@@ -25,6 +25,7 @@ import Index from "./pages/Index";
 
 // MISC
 import NotFound from "./pages/NotFound";
+import DeliveryBoy from "./pages/DeliveryBoy";
 
 const queryClient = new QueryClient();
 
@@ -40,13 +41,13 @@ const App = () => (
     {/* ---------------- */}
     {/* PUBLIC ROUTES */}
     {/* ---------------- */}
-    <Route path="/login" element={<Login />} />
-    <Route path="/track" element={<Index />} /> {/* PUBLIC */}
+    {/* <Route path="/login" element={<Login />} />
+    <Route path="/track" element={<Index />} /> PUBLIC */}
 
     {/* ---------------- */}
     {/* ADMIN ROUTES */}
     {/* ---------------- */}
-    <Route
+    {/* <Route
       element={
         <ProtectedRoute allowedRole="admin">
           <MainLayout />
@@ -60,28 +61,28 @@ const App = () => (
       <Route path="/rescheduled" element={<Rescheduled />} />
       <Route path="/analytics" element={<Analytics />} />
       <Route path="/settings" element={<Settings />} />
-    </Route>
+    </Route> */}
 
     {/* ----------------------- */}
     {/* DELIVERY AGENT ROUTES */}
     {/* ----------------------- */}
-    <Route
+    {/* <Route
       path="/delivery_agent"
       element={
         <ProtectedRoute allowedRole="delivery">
           <DeliveryAgentDashboard />
         </ProtectedRoute>
       }
-    />
+    /> */}
 
     {/* ---------------- */}
     {/* NOT FOUND */}
     {/* ---------------- */}
-    <Route path="*" element={<NotFound />} />
+    {/* <Route path="*" element={<NotFound />} /> */}
 
+    <Route path="/" element={<DeliveryBoy />} />
   </Routes>
 </BrowserRouter>
-
     </TooltipProvider>
   </QueryClientProvider>
 );
