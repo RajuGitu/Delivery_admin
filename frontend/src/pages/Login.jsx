@@ -38,7 +38,7 @@ const Login = () => {
 
       // Redirect
       if (userRole === "admin") navigate("/");
-      if (userRole === "delivery") navigate("/delivery_agent");
+      if (userRole === "delivery") navigate("/delivery_partner");
 
 
     } catch (error) {
