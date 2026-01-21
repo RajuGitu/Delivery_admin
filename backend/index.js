@@ -8,8 +8,9 @@ const mongoose = require("mongoose");
 const authRoutes = require("./routes/authRoutes");
 const recipientRoutes = require("./routes/recipientRoutes");
 const deliveryBoyRoutes = require("./routes/deliveryBoyRoutes");
-const orderRoutes = require("./routes/orderRoutes"); 
+const orderRoutes = require("./routes/orderRoutes");
 const deliveryPlanRoutes = require("./routes/deliveryPlanRoutes");
+const slotRoutes = require("./routes/slotRoutes");
 // ENV
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use("/api", slotRoutes);
 
 /* ===================== */
 /* ROUTES */
@@ -42,6 +44,7 @@ app.use("/api/recipients", recipientRoutes);
 app.use("/api/delivery-boys", deliveryBoyRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/delivery-plans", deliveryPlanRoutes);
+app.use("/api/ai-recommendation", slotRoutes);
 
 /* ===================== */
 /* DATABASE */

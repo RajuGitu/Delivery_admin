@@ -38,51 +38,50 @@ const App = () => (
       <BrowserRouter>
         <Routes>
 
-    {/* ---------------- */}
-    {/* PUBLIC ROUTES */}
-    {/* ---------------- */}
-    <Route path="/login" element={<Login />} />
-    <Route path="/track" element={<Index />} /> PUBLIC
+          {/* ---------------- */}
+          {/* PUBLIC ROUTES */}
+          {/* ---------------- */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/track/:orderId" element={<Index />} />
+          {/* ---------------- */}
+          {/* ADMIN ROUTES */}
+          {/* ---------------- */}
+          <Route
+            element={
+              <ProtectedRoute allowedRole="admin">
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/orders" element={<OrdersReceived />} />
+            <Route path="/confirmed" element={<ConfirmedSlots />} />
+            <Route path="/delivery-plan" element={<DeliveryPlan />} />
+            <Route path="/rescheduled" element={<Rescheduled />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
 
-    {/* ---------------- */}
-    {/* ADMIN ROUTES */}
-    {/* ---------------- */}
-    <Route
-      element={
-        <ProtectedRoute allowedRole="admin">
-          <MainLayout />
-        </ProtectedRoute>
-      }
-    >
-      <Route path="/" element={<Dashboard />} />
-      <Route path="/orders" element={<OrdersReceived />} />
-      <Route path="/confirmed" element={<ConfirmedSlots />} />
-      <Route path="/delivery-plan" element={<DeliveryPlan />} />
-      <Route path="/rescheduled" element={<Rescheduled />} />
-      <Route path="/analytics" element={<Analytics />} />
-      <Route path="/settings" element={<Settings />} />
-    </Route>
+          {/* ----------------------- */}
+          {/* DELIVERY AGENT ROUTES */}
+          {/* ----------------------- */}
+          <Route
+            path="/delivery_agent"
+            element={
+              <ProtectedRoute allowedRole="delivery">
+                <DeliveryAgentDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-    {/* ----------------------- */}
-    {/* DELIVERY AGENT ROUTES */}
-    {/* ----------------------- */}
-    <Route
-      path="/delivery_agent"
-      element={
-        <ProtectedRoute allowedRole="delivery">
-          <DeliveryAgentDashboard />
-        </ProtectedRoute>
-      }
-    />
+          {/* ---------------- */}
+          {/* NOT FOUND */}
+          {/* ---------------- */}
+          <Route path="*" element={<NotFound />} />
 
-    {/* ---------------- */}
-    {/* NOT FOUND */}
-    {/* ---------------- */}
-    <Route path="*" element={<NotFound />} />
-
-    <Route path="/delivery_partner" element={<DeliveryBoy />} />
-  </Routes>
-</BrowserRouter>
+          <Route path="/delivery_partner" element={<DeliveryBoy />} />
+        </Routes>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

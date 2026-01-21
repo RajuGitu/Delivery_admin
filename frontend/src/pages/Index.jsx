@@ -20,13 +20,14 @@ const Index = () => {
 
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
+
     const [selectedSlot, setSelectedSlot] = useState(null);
+    const [aiSlots, setAiSlots] = useState([]); // NEW → receive slots from DateSlotSelector
+
     const [isConfirming, setIsConfirming] = useState(false);
     const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
 
-    // ---------------------------
-    // 1️⃣ Fetch Order from Backend
-    // ---------------------------
+    // Fetch order
     useEffect(() => {
         const loadOrder = async () => {
             try {
@@ -34,8 +35,7 @@ const Index = () => {
                     `http://localhost:5001/api/orders/track/${orderId}`
                 );
                 setOrder(res.data.order);
-            } catch (err) {
-                console.error("Failed to load order", err);
+            } catch (error) {
                 toast({ title: "Error", description: "Invalid tracking link" });
             } finally {
                 setLoading(false);
@@ -44,28 +44,20 @@ const Index = () => {
         loadOrder();
     }, [orderId]);
 
-    // ---------------------------
-    // 2️⃣ Convert backend slot → UI slot
-    // ---------------------------
+    // Map system recommended slots
     const mappedSlots =
         order?.systemRecommendedSlots?.map((slot) => ({
             id: slot._id,
             date: slot.date,
             startTime: slot.startTime,
             endTime: slot.endTime,
-
-            // Backend → UI conversion
-            isAvailable: true, // default because backend doesn’t send availability
-            isAiRecommended: slot.tag === "AI Recommended" || slot.confidenceScore > 85,
-
+            isAvailable: true,
+            isAiRecommended: false,
             tag: slot.tag,
-            confidenceScore: slot.confidenceScore,
+            confidenceScore: slot.confidenceScore
         })) || [];
 
-
-    // ---------------------------
-    // 3️⃣ Confirm Slot API
-    // ---------------------------
+    // Confirm Slot
     const handleConfirmSlot = async () => {
         if (!selectedSlot) return;
 
@@ -79,26 +71,24 @@ const Index = () => {
             setOrder((prev) => ({
                 ...prev,
                 status: "slot_confirmed",
-                selectedSlot,
+                selectedSlot
             }));
 
             toast({
                 title: "Slot Confirmed!",
-                description: `${selectedSlot.startTime} – ${selectedSlot.endTime}`,
+                description: `${selectedSlot.startTime} – ${selectedSlot.endTime}`
             });
         } catch (error) {
             toast({
                 title: "Failed",
                 description: "Could not confirm slot",
-                variant: "destructive",
+                variant: "destructive"
             });
         }
         setIsConfirming(false);
     };
 
-    // ---------------------------
-    // 4️⃣ Reschedule Slot API
-    // ---------------------------
+    // Reschedule Slot
     const handleReschedule = async (slot) => {
         try {
             await axios.post(
@@ -109,18 +99,18 @@ const Index = () => {
             setOrder((prev) => ({
                 ...prev,
                 status: "rescheduled",
-                selectedSlot: slot,
+                selectedSlot: slot
             }));
 
             toast({
                 title: "Rescheduled!",
-                description: `${slot.startTime} – ${slot.endTime}`,
+                description: `${slot.startTime} – ${slot.endTime}`
             });
         } catch (error) {
             toast({
                 title: "Failed",
                 description: "Could not reschedule",
-                variant: "destructive",
+                variant: "destructive"
             });
         }
 
@@ -128,69 +118,35 @@ const Index = () => {
         setIsRescheduleOpen(false);
     };
 
-    // ---------------------------
-    // Loading / Missing Handling
-    // ---------------------------
     if (loading)
-        return <p className="text-center mt-10 text-muted-foreground">Loading...</p>;
+        return <p className="text-center mt-10">Loading...</p>;
 
     if (!order)
-        return (
-            <p className="text-center mt-10 text-red-500 text-lg">
-                Order not found.
-            </p>
-        );
+        return <p className="text-center text-red-500 mt-10">Order not found.</p>;
 
-    // -------------------------------------------------------------------
-    // UI Rendering
-    // -------------------------------------------------------------------
     return (
-        <div className="min-h-screen bg-[hsl(var(--background))] flex flex-col">
+        <div className="min-h-screen bg-background flex flex-col">
             <Header parcelId={order.orderNumber} />
 
             <main className="flex-1 container max-w-3xl mx-auto px-4 py-6 space-y-6">
                 <ParcelSummaryCard parcel={order} />
 
-                {/* Delay Message */}
-                <AnimatePresence mode="wait">
-                    {order.status === "delayed" && order.agentMessage && (
-                        <DelayAlert
-                            key="delay"
-                            agentMessage={order.agentMessage}
-                            onReschedule={() => setIsRescheduleOpen(true)}
-                        />
-                    )}
-
-                    {order.status === "out_for_delivery" && (
-                        <OutForDeliveryBanner key="out-for-delivery" />
-                    )}
-                </AnimatePresence>
-
-                {/* Slot Selector (ONLY when slots_sent OR rescheduled) */}
                 {(order.status === "slots_sent" || order.status === "rescheduled") && (
-                    <motion.section
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                    >
-                        <DateSlotSelector
-                            slots={mappedSlots}
-                            selectedSlot={selectedSlot}
-                            onSelectSlot={setSelectedSlot}
-                        />
-                    </motion.section>
+                    <DateSlotSelector
+                        slots={mappedSlots}
+                        selectedSlot={selectedSlot}
+                        onSelectSlot={setSelectedSlot}
+                        onSlotsLoaded={setAiSlots} // NEW
+                    />
                 )}
 
-                {/* Confirm button */}
+                {/* Confirm */}
                 {(order.status === "slots_sent" || order.status === "rescheduled") &&
                     selectedSlot && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="sticky bottom-4 pt-4"
-                        >
+                        <div className="sticky bottom-4 pt-4">
                             <Button
                                 size="lg"
-                                className="w-full h-14 text-lg font-display font-semibold shadow-lg"
+                                className="w-full h-14 text-lg font-semibold"
                                 onClick={handleConfirmSlot}
                                 disabled={isConfirming}
                             >
@@ -206,25 +162,18 @@ const Index = () => {
                                     </>
                                 )}
                             </Button>
-                        </motion.div>
+                        </div>
                     )}
 
                 {/* After Confirmation */}
                 {order.status === "slot_confirmed" && order.selectedSlot && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         className="bg-card border rounded-xl p-6 text-center"
                     >
-                        <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
-                            <CheckCircle2 className="w-8 h-8 text-success" />
-                        </div>
-
-                        <h3 className="font-display font-semibold text-xl mb-2">
-                            Delivery Scheduled
-                        </h3>
-
-                        <p className="text-muted-foreground mb-4">
+                        <h3 className="font-semibold text-xl">Delivery Scheduled</h3>
+                        <p className="text-muted-foreground mt-2">
                             {order.selectedSlot.date}: {order.selectedSlot.startTime} –{" "}
                             {order.selectedSlot.endTime}
                         </p>
@@ -232,9 +181,9 @@ const Index = () => {
                         <Button
                             variant="outline"
                             onClick={() => setIsRescheduleOpen(true)}
-                            className="gap-2"
+                            className="mt-4"
                         >
-                            <CalendarClock className="w-4 h-4" />
+                            <CalendarClock className="w-4 h-4 mr-2" />
                             Change Slot
                         </Button>
                     </motion.div>
@@ -243,11 +192,10 @@ const Index = () => {
 
             <Footer />
 
-            {/* Reschedule Modal */}
             <RescheduleModal
                 isOpen={isRescheduleOpen}
                 onClose={() => setIsRescheduleOpen(false)}
-                slots={mappedSlots}
+                slots={[...mappedSlots, ...aiSlots]} // BOTH SHOW IN RESCHEDULE
                 onConfirm={handleReschedule}
                 reason={order.agentMessage}
             />
@@ -256,6 +204,268 @@ const Index = () => {
 };
 
 export default Index;
+
+
+
+
+// import { useEffect, useState } from "react";
+// import { useParams } from "react-router-dom";
+// import axios from "axios";
+
+// import { motion, AnimatePresence } from "framer-motion";
+// import { Header } from "../components/delivery_user/Header";
+// import { ParcelSummaryCard } from "../components/delivery_user/ParcelSummaryCard";
+// import { DateSlotSelector } from "../components/delivery_user/DateSlotSelector";
+// import { DelayAlert } from "../components/delivery_user/DelayAlert";
+// import { OutForDeliveryBanner } from "../components/delivery_user/OutForDeliveryBanner";
+// import { RescheduleModal } from "../components/delivery_user/RescheduleModal";
+// import { Footer } from "../components/delivery_user/Footer";
+// import { Button } from "../components/ui/Button";
+
+// import { CheckCircle2, Loader2, CalendarClock } from "lucide-react";
+// import { toast } from "@/hooks/use-toast";
+
+// const Index = () => {
+//     const { orderId } = useParams();
+
+//     const [order, setOrder] = useState(null);
+//     const [loading, setLoading] = useState(true);
+//     const [selectedSlot, setSelectedSlot] = useState(null);
+//     const [isConfirming, setIsConfirming] = useState(false);
+//     const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
+
+//     // ---------------------------
+//     // 1️⃣ Fetch Order from Backend
+//     // ---------------------------
+//     useEffect(() => {
+//         const loadOrder = async () => {
+//             try {
+//                 const res = await axios.get(
+//                     `http://localhost:5001/api/orders/track/${orderId}`
+//                 );
+//                 setOrder(res.data.order);
+//             } catch (err) {
+//                 console.error("Failed to load order", err);
+//                 toast({ title: "Error", description: "Invalid tracking link" });
+//             } finally {
+//                 setLoading(false);
+//             }
+//         };
+//         loadOrder();
+//     }, [orderId]);
+
+//     // ---------------------------
+//     // 2️⃣ Convert backend slot → UI slot
+//     // ---------------------------
+//     const mappedSlots =
+//         order?.systemRecommendedSlots?.map((slot) => ({
+//             id: slot._id,
+//             date: slot.date,
+//             startTime: slot.startTime,
+//             endTime: slot.endTime,
+
+//             // Backend → UI conversion
+//             isAvailable: true, // default because backend doesn’t send availability
+//             isAiRecommended: slot.tag === "AI Recommended" || slot.confidenceScore > 85,
+
+//             tag: slot.tag,
+//             confidenceScore: slot.confidenceScore,
+//         })) || [];
+
+
+//     // ---------------------------
+//     // 3️⃣ Confirm Slot API
+//     // ---------------------------
+//     const handleConfirmSlot = async () => {
+//         if (!selectedSlot) return;
+
+//         setIsConfirming(true);
+//         try {
+//             await axios.post(
+//                 `http://localhost:5001/api/orders/confirm-slot/${orderId}`,
+//                 { slot: selectedSlot }
+//             );
+
+//             setOrder((prev) => ({
+//                 ...prev,
+//                 status: "slot_confirmed",
+//                 selectedSlot,
+//             }));
+
+//             toast({
+//                 title: "Slot Confirmed!",
+//                 description: `${selectedSlot.startTime} – ${selectedSlot.endTime}`,
+//             });
+//         } catch (error) {
+//             toast({
+//                 title: "Failed",
+//                 description: "Could not confirm slot",
+//                 variant: "destructive",
+//             });
+//         }
+//         setIsConfirming(false);
+//     };
+
+//     // ---------------------------
+//     // 4️⃣ Reschedule Slot API
+//     // ---------------------------
+//     const handleReschedule = async (slot) => {
+//         try {
+//             await axios.post(
+//                 `http://localhost:5001/api/orders/reschedule/${orderId}`,
+//                 { slot }
+//             );
+
+//             setOrder((prev) => ({
+//                 ...prev,
+//                 status: "rescheduled",
+//                 selectedSlot: slot,
+//             }));
+
+//             toast({
+//                 title: "Rescheduled!",
+//                 description: `${slot.startTime} – ${slot.endTime}`,
+//             });
+//         } catch (error) {
+//             toast({
+//                 title: "Failed",
+//                 description: "Could not reschedule",
+//                 variant: "destructive",
+//             });
+//         }
+
+//         setSelectedSlot(slot);
+//         setIsRescheduleOpen(false);
+//     };
+
+//     // ---------------------------
+//     // Loading / Missing Handling
+//     // ---------------------------
+//     if (loading)
+//         return <p className="text-center mt-10 text-muted-foreground">Loading...</p>;
+
+//     if (!order)
+//         return (
+//             <p className="text-center mt-10 text-red-500 text-lg">
+//                 Order not found.
+//             </p>
+//         );
+
+//     // -------------------------------------------------------------------
+//     // UI Rendering
+//     // -------------------------------------------------------------------
+//     return (
+//         <div className="min-h-screen bg-[hsl(var(--background))] flex flex-col">
+//             <Header parcelId={order.orderNumber} />
+
+//             <main className="flex-1 container max-w-3xl mx-auto px-4 py-6 space-y-6">
+//                 <ParcelSummaryCard parcel={order} />
+
+//                 {/* Delay Message */}
+//                 <AnimatePresence mode="wait">
+//                     {order.status === "delayed" && order.agentMessage && (
+//                         <DelayAlert
+//                             key="delay"
+//                             agentMessage={order.agentMessage}
+//                             onReschedule={() => setIsRescheduleOpen(true)}
+//                         />
+//                     )}
+
+//                     {order.status === "out_for_delivery" && (
+//                         <OutForDeliveryBanner key="out-for-delivery" />
+//                     )}
+//                 </AnimatePresence>
+
+//                 {/* Slot Selector (ONLY when slots_sent OR rescheduled) */}
+//                 {(order.status === "slots_sent" || order.status === "rescheduled") && (
+//                     <motion.section
+//                         initial={{ opacity: 0, y: 20 }}
+//                         animate={{ opacity: 1, y: 0 }}
+//                     >
+//                         <DateSlotSelector
+//                             slots={mappedSlots}
+//                             selectedSlot={selectedSlot}
+//                             onSelectSlot={setSelectedSlot}
+//                         />
+//                     </motion.section>
+//                 )}
+
+//                 {/* Confirm button */}
+//                 {(order.status === "slots_sent" || order.status === "rescheduled") &&
+//                     selectedSlot && (
+//                         <motion.div
+//                             initial={{ opacity: 0, y: 20 }}
+//                             animate={{ opacity: 1, y: 0 }}
+//                             className="sticky bottom-4 pt-4"
+//                         >
+//                             <Button
+//                                 size="lg"
+//                                 className="w-full h-14 text-lg font-display font-semibold shadow-lg"
+//                                 onClick={handleConfirmSlot}
+//                                 disabled={isConfirming}
+//                             >
+//                                 {isConfirming ? (
+//                                     <>
+//                                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+//                                         Confirming...
+//                                     </>
+//                                 ) : (
+//                                     <>
+//                                         <CheckCircle2 className="w-5 h-5 mr-2" />
+//                                         Confirm Delivery Slot
+//                                     </>
+//                                 )}
+//                             </Button>
+//                         </motion.div>
+//                     )}
+
+//                 {/* After Confirmation */}
+//                 {order.status === "slot_confirmed" && order.selectedSlot && (
+//                     <motion.div
+//                         initial={{ opacity: 0, scale: 0.95 }}
+//                         animate={{ opacity: 1, scale: 1 }}
+//                         className="bg-card border rounded-xl p-6 text-center"
+//                     >
+//                         <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+//                             <CheckCircle2 className="w-8 h-8 text-success" />
+//                         </div>
+
+//                         <h3 className="font-display font-semibold text-xl mb-2">
+//                             Delivery Scheduled
+//                         </h3>
+
+//                         <p className="text-muted-foreground mb-4">
+//                             {order.selectedSlot.date}: {order.selectedSlot.startTime} –{" "}
+//                             {order.selectedSlot.endTime}
+//                         </p>
+
+//                         <Button
+//                             variant="outline"
+//                             onClick={() => setIsRescheduleOpen(true)}
+//                             className="gap-2"
+//                         >
+//                             <CalendarClock className="w-4 h-4" />
+//                             Change Slot
+//                         </Button>
+//                     </motion.div>
+//                 )}
+//             </main>
+
+//             <Footer />
+
+//             {/* Reschedule Modal */}
+//             <RescheduleModal
+//                 isOpen={isRescheduleOpen}
+//                 onClose={() => setIsRescheduleOpen(false)}
+//                 slots={mappedSlots}
+//                 onConfirm={handleReschedule}
+//                 reason={order.agentMessage}
+//             />
+//         </div>
+//     );
+// };
+
+// export default Index;
 
 
 
